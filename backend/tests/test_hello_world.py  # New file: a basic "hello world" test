@@ -1,0 +1,21 @@
+[tool.poetry.dependencies]
+fastapi = "^0.95.0"
+httpx = "^0.23.0"
+pytest-asyncio = "^0.18.3"
+
+tests/test_hello_world.py
+from fastapi import FastAPI
+from httpx import AsyncClient
+import pytest
+
+app = FastAPI()
+
+@app.get("/")
+async def read_root():
+    return {"Hello": "World"}
+
+@pytest.mark.asyncio
+async def test_read_root():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.get("/")
+        assert response.json() == {"Hello": "World"}
