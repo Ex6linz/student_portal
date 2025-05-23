@@ -1,3 +1,4 @@
+# app/auth/security.py
 from datetime import datetime, timedelta
 from uuid import UUID
 import jwt
@@ -48,4 +49,4 @@ def create_refresh_token(sub: UUID | str,
         "iat": datetime.utcnow(),
         "exp": expire,
     }
-    return _jwt_encode(payload)
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
