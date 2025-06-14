@@ -1,10 +1,9 @@
-# app/auth/models.py
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4, UUID
-from typing import Optional
+from typing import Optional, Literal, List
 
 from sqlalchemy import ForeignKey
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship  # IMPORTANT: Import Relationship from sqlmodel
 from sqlalchemy import Column, String, DateTime, Boolean, Text, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
@@ -41,7 +40,10 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(
        default_factory=lambda: datetime.now(timezone.utc),
        sa_column=Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-)
+    )
+
+    # SQLModel relationship syntax
+    email_tokens: List["EmailToken"] = Relationship(back_populates="user")
 
 
 class RefreshToken(SQLModel, table=True):
@@ -82,3 +84,45 @@ class RefreshToken(SQLModel, table=True):
             created_at=now,
             expires_at=now + timedelta(days=days_valid),
         )
+
+    
+class EmailToken(SQLModel, table=True):
+    """Email verification and password reset tokens"""
+    __tablename__ = 'email_token'
+
+    id: UUID = Field(
+        sa_column=Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4),
+    )
+    
+    user_id: UUID = Field(
+        sa_column=Column(
+            PG_UUID(as_uuid=True),
+            ForeignKey("users.id"),
+            nullable=False,
+            index=True
+        ),
+    )
+    
+    type: Literal['confirm', 'reset'] = Field(
+        sa_column=Column(String(10), nullable=False, index=True),
+    )
+    
+    jti: str = Field(
+        sa_column=Column(String(255), nullable=False, unique=True, index=True),
+    )
+    
+    exp: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True),
+    )
+    
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, server_default=func.now()),
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+
+    # SQLModel relationship syntax
+    user: Optional["User"] = Relationship(back_populates="email_tokens")
+
+    def is_expired(self) -> bool:
+        """Check if token is expired"""
+        return datetime.utcnow() > self.exp

@@ -8,13 +8,20 @@ from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
 
+import app.media
+import app.media.models
+
 # ——— DEBUG: Ensure correct env.py is loaded ———
 print(f">>> DEBUG: loading env.py from {__file__}")
 print(f">>> DEBUG: sys.path = {sys.path}")
 # —————————————————————————————————————
 
 # ——— Import all modules with SQLModel(table=True) so metadata is populated ———
-import app.auth.models      # class User(table=True)
+import app.auth.models
+import app.forum.models
+from app.forum.models import Topic, Post, Comment
+import app.media.models     
+# class User(table=True)
 # import app.auth.models.refresh_token
 # import app.users.models
 # import app.media.models
